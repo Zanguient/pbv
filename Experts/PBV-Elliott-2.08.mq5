@@ -11,13 +11,14 @@
 #include <Trade\AccountInfo.mqh>
 CAccountInfo infoConta;
 
+
 #include <Trade\SymbolInfo.mqh>
 CSymbolInfo ativoInfo;
 
-
-
 #include <Trade\Trade.mqh>
 CTrade trade;
+
+int idRobo = 123456789 ;
 
 #include <Trade\OrderInfo.mqh>
 COrderInfo ordPend;
@@ -26,7 +27,7 @@ COrderInfo ordPend;
 CChartObjectArrow icone;
 
 datetime tempoCandleBuffer[];
-int idRobo = 123456789 ;
+
 
 int      totalCopiarBuffer = 100;
 
@@ -37,7 +38,7 @@ double   zzFundoBuffer[];
 datetime zzDataFundo[];
 datetime zzDataTopo[];
 int      zzHandle;
-input int zzProfundidade = 12; // Profundida das ondas maiores
+input int zzProfundidade = 28; // Profundida das ondas maiores
 
 // Variáveis das ondas menores (ondas dentro das ondas maiores)
 long     volumeBuffer2[];
@@ -46,14 +47,14 @@ double   zzFundoBuffer2[];
 datetime zzDataFundo2[];
 datetime zzDataTopo2[];
 int      zzHandle2;
-input int zzProfundidade2 = 3 ; // Profundida das ondas menores
+input int zzProfundidade2 = 7 ; // Profundida das ondas menores
 
 // Região para entrada das operações
 input double regiaoPrecoInicio = 0.786; // Região de preço de início
 input double regiaoPrecoFim = 0.886; // Região de preço de fim
 
 
-input double volumeOperacao = 1; // Volume a ser operado
+input double volumeOperacao = 5; // Volume a ser operado
 input datetime mercadoHoraInicio = "09:10:00" ; // Hora de início das operações
 input datetime mercadoHoraFim = "17:50:00" ; // Hora de fim das operações
 
@@ -64,8 +65,10 @@ ENUM_POSITION_TYPE tipoPosicaoAberta ;
 double takeProfit = 0;
 double stopLoss = 0;
 int deltaStop = 0;
-input double deltaStopPercentual = 0.2360; // Percentual do Delta Stop
+input double deltaStopPercentual = 0.6800; // Percentual do Delta Stop
 double traillingStop = 0 ;
+
+int input stopLossPontos = 100 ; //Pontos para o StopLoss
 
 
 
@@ -86,14 +89,14 @@ int OnInit() {
    }
 
 
-   // define para acessar como timeseries
+// define para acessar como timeseries
    ArraySetAsSeries(zzTopoBuffer, true);
    ArraySetAsSeries(zzFundoBuffer, true);
    ArraySetAsSeries(zzDataFundo, true);
    ArraySetAsSeries(zzDataTopo, true);
 
 
-   // define para acessar como timeseries
+// define para acessar como timeseries
    ArraySetAsSeries(zzTopoBuffer2, true);
    ArraySetAsSeries(zzFundoBuffer2, true);
    ArraySetAsSeries(zzDataFundo2, true);
@@ -105,8 +108,14 @@ int OnInit() {
    double   margemDisp = infoConta.FreeMargin();
    bool     isPermitidoTrade = infoConta.TradeAllowed();
    bool     isPermitidoRobo = infoConta.TradeExpert();    //Slide -> isPermitidoRoto
-   // ...
-   // Print("Saldo: ", saldo, " ", margemDisp);
+// ...
+// Print("Saldo: ", saldo, " ", margemDisp);
+
+
+
+// trade.SetExpertMagicNumber(idRobo);
+//  ativoInfo.Name(Symbol());
+
 
    return(INIT_SUCCEEDED);
 }
@@ -122,22 +131,24 @@ void OnDeinit(const int reason) {
 }
 
 
+
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick() {
 //---
 
-   // Se o horário não confere com o setup, fechar todas as posições e ordens
+
+// Se o horário não confere com o setup, fechar todas as posições e ordens
    if(TimeCurrent() < mercadoHoraInicio && TimeCurrent() > mercadoHoraFim) {
       fecharTodasOrdensPendentesRobo();
       fecharTodasPosicoesRobo();
       return;
    }
 
-   //Comment("Data atual: ", TimeCurrent(), " HORA INICIO: ", mercadoHoraInicio, "  HORA FIM: ", mercadoHoraFim);
+//Comment("Data atual: ", TimeCurrent(), " HORA INICIO: ", mercadoHoraInicio, "  HORA FIM: ", mercadoHoraFim);
 
-   // Se o ativo ainda não estiver sincronizado, retornar.
+// Se o ativo ainda não estiver sincronizado, retornar.
    if(!ativoInfo.IsSynchronized()) {
       return ;
    }
@@ -148,25 +159,25 @@ void OnTick() {
       +------------------------------------------+
    */
 
-   // copia os topos das ondas maiores
+// copia os topos das ondas maiores
    if(CopyBuffer(zzHandle, 1, 0, totalCopiarBuffer, zzTopoBuffer) < 0 ) {
       Print("Erro ao copiar dados dos topos das ondas maiores: ", GetLastError());
       return;
    }
 
-   // copia os fundos das ondas maiores
+// copia os fundos das ondas maiores
    if(CopyBuffer(zzHandle, 2, 0, totalCopiarBuffer, zzFundoBuffer) < 0 ) {
       Print("Erro ao copiar dados dos fundos das ondas maiores: ", GetLastError());
       return;
    }
 
-   // Copiar datas e horas dos topos das ondas maiores
+// Copiar datas e horas dos topos das ondas maiores
    if(CopyTime(_Symbol, _Period, 0, totalCopiarBuffer, zzDataTopo) < 0) {
       Print("ERRO ao copiar datas topos das ondas maiores");
       return;
    }
 
-   // Copiar datas e horas dos fundos das ondas maiores
+// Copiar datas e horas dos fundos das ondas maiores
    if(CopyTime(_Symbol, _Period, 0, totalCopiarBuffer, zzDataFundo) < 0) {
       Print("ERRO ao copiar datas fundos das ondas maiores");
       return;
@@ -179,25 +190,25 @@ void OnTick() {
       +------------------------------------------+
    */
 
-   // copia os topos das ondas menores
+// copia os topos das ondas menores
    if(CopyBuffer(zzHandle2, 1, 0, totalCopiarBuffer, zzTopoBuffer2) < 0 ) {
       Print("Erro ao copiar dados dos topos das ondas menores: ", GetLastError());
       return;
    }
 
-   // copia os fundos das ondas menores
+// copia os fundos das ondas menores
    if(CopyBuffer(zzHandle2, 2, 0, totalCopiarBuffer, zzFundoBuffer2) < 0 ) {
       Print("Erro ao copiar dados dos fundos das ondas menores: ", GetLastError());
       return;
    }
 
-   // Copiar datas e horas dos topos das ondas menores
+// Copiar datas e horas dos topos das ondas menores
    if(CopyTime(_Symbol, _Period, 0, totalCopiarBuffer, zzDataTopo2) < 0) {
       Print("ERRO ao copiar datas topos das ondas menores");
       return;
    }
 
-   // Copiar datas e horas dos fundos das ondas menores
+// Copiar datas e horas dos fundos das ondas menores
    if(CopyTime(_Symbol, _Period, 0, totalCopiarBuffer, zzDataFundo2) < 0) {
       Print("ERRO ao copiar datas fundos das ondas menores");
       return;
@@ -224,7 +235,7 @@ void OnTick() {
    int tamArrayFundo2 = ArraySize(zzFundoBuffer2);
 
 
-   // Topo da Onda Maior
+// Topo da Onda Maior
    double   precoTopoAtual;
    double   precoTopoAnterior;
    double   precoTopoAnteriorC;
@@ -234,14 +245,14 @@ void OnTick() {
    datetime dataTopoAnteriorC;
 
 
-   //Topo da Onda Menor
+//Topo da Onda Menor
    double   precoTopoAtual2;
    double   precoTopoAnterior2;
    datetime dataTopoAtual2;
    datetime dataTopoAnterior2;
 
 
-   // Fundo Onda Maior
+// Fundo Onda Maior
    double   precoFundoAtual;
    double   precoFundoAnterior;
    double   precoFundoAnteriorC;
@@ -251,7 +262,7 @@ void OnTick() {
    datetime dataFundoAnteriorC;
 
 
-   // Fundo da Onda menor
+// Fundo da Onda menor
    double   precoFundoAtual2;
    double   precoFundoAnterior2;
    datetime dataFundoAtual2;
@@ -262,7 +273,7 @@ void OnTick() {
       | Buscar topos e fundos das ondas MAIORES |
       +-----------------------------------------+
    */
-   // Laço para buscar os topos das ondas maiores
+// Laço para buscar os topos das ondas maiores
    for(int i = 0 ; i < tamArrayTopo ; i++) {
 
       // processar topos das ondas maiores
@@ -286,7 +297,7 @@ void OnTick() {
    } //Fim do laço para obter topos e topos
 
 
-   // Laço para buscar os fundos das ondas maiores
+// Laço para buscar os fundos das ondas maiores
    for(int i = 0 ; i < tamArrayFundo ; i++) {
       // processar fundos
       if( zzFundoBuffer[i] != 0 ) {
@@ -314,7 +325,7 @@ void OnTick() {
       | Buscar topos e fundos das ondas MENORES |
       +-----------------------------------------+
    */
-   // Laço para buscar os topos das ondas menores
+// Laço para buscar os topos das ondas menores
    for(int i = 0 ; i < tamArrayTopo2 ; i++) {
 
       // processar topos das ondas menores
@@ -334,7 +345,7 @@ void OnTick() {
    } //Fim do laço para obter topos e topos
 
 
-   // Laço para buscar os fundos das ondas menores
+// Laço para buscar os fundos das ondas menores
    for(int i = 0 ; i < tamArrayFundo2 ; i++) {
       // processar fundos
       if( zzFundoBuffer2[i] != 0 ) {
@@ -351,11 +362,10 @@ void OnTick() {
    } //Fim do laço para obter topos e fundos
 
 
-
-
-   // Atualizar informações do ativo
+// Atualizar informações do ativo
    ativoInfo.Refresh();
    ativoInfo.RefreshRates();
+
 
 
    if(dataFundoAtual > dataTopoAtual) {
@@ -399,7 +409,7 @@ void OnTick() {
             double volOrdem = ativoInfo.LotsMin() * volumeOperacao;
 
             //Comment("\n\nR1: ", (precoTopoAtual - precoFundoAnterior) * regiaoPrecoInicio, " R2: ", (precoTopoAtual - precoFundoAnterior) * regiaoPrecoFim );
-            abrirOrdem(ORDER_TYPE_BUY, ativoInfo.Ask(), volOrdem, stopLoss, 0, "compra - R1 " + DoubleToString(precoCompraRegiao1 * regiaoPrecoInicio, 1) + "%  R2: " +  DoubleToString(precoCompraRegiao2 * regiaoPrecoFim, 1) + "%" );
+            abrirOrdem(ORDER_TYPE_BUY, ativoInfo.Ask(), volOrdem, stopLoss, takeProfit, "compra - R1 " + DoubleToString(precoCompraRegiao1 * regiaoPrecoInicio, 1) + "%  R2: " +  DoubleToString(precoCompraRegiao2 * regiaoPrecoFim, 1) + "%" );
          }
       }
 
@@ -434,54 +444,61 @@ void OnTick() {
             double volOrdem = ativoInfo.LotsMin() * volumeOperacao;
 
             // Comment("\n\nR1: ", (precoTopoAnterior - precoFundoAtual) * regiaoPrecoInicio, " R2: ",  (precoTopoAnterior - precoFundoAtual) * regiaoPrecoFim  );
-            abrirOrdem(ORDER_TYPE_SELL, ativoInfo.Bid(), volOrdem, stopLoss, 0, "venda - R1 " + DoubleToString(precoVendaRegiao1 * regiaoPrecoInicio, 1) + "%  R2: " +  DoubleToString(precoVendaRegiao2 * regiaoPrecoFim, 1) + "%" );
+            abrirOrdem(ORDER_TYPE_SELL, ativoInfo.Bid(), volOrdem, stopLoss, takeProfit, "venda - R1 " + DoubleToString(precoVendaRegiao1 * regiaoPrecoInicio, 1) + "%  R2: " +  DoubleToString(precoVendaRegiao2 * regiaoPrecoFim, 1) + "%" );
 
          }
       }
    }
 
 
-   //-------------------------------------------
-   // Trailling stop
+//-------------------------------------------
+// Trailling stop
    if( isPosicaoAberta ) {
+      MqlTradeRequest request = {0};
+      MqlTradeResult response = {0};
+      ulong ticket = 0 ;
+      double newsl = 0 ;
 
       // caso compra
-      if( tipoPosicaoAberta == POSITION_TYPE_BUY) {
+      if( buscarPosicaoAbertasByTipo(POSITION_TYPE_BUY) == true && buscarPosicaoAbertasByTipo(POSITION_TYPE_SELL) == false) {
+         Print("Posição de compra:");
          // preço atual for maior do que o fundo da onda atual menor muda o trailling
 
-         if( ativoInfo.Last() > precoFundoAtual2 ) {
+         if( ativoInfo.Last() > precoFundoAnterior2 ) {
+            for(int i = 0; i < PositionsTotal(); i++) {
+               ticket = PositionGetTicket(i);
+               if(ticket > 0) {
 
-            deltaStop = NormalizeDouble((precoTopoAtual - precoFundoAnterior) * deltaStopPercentual, _Digits) ;
-
-            double valorStopLoss = NormalizeDouble(precoFundoAtual2 -  deltaStop, _Digits);
-            stopLoss = NormalizeDouble(MathRound(valorStopLoss / ativoInfo.TickSize()) * ativoInfo.TickSize(), _Digits);
-
-            trade.PositionModify(_Symbol, NormalizeDouble( 20, _Digits), 0);
-
-         } 
-
-      } else {
+                  newsl = NormalizeDouble(precoFundoAnterior2 -  stopLossPontos * ativoInfo.Point(), ativoInfo.Digits());
+                  if(newsl > PositionGetDouble(POSITION_SL)) {
+                     trade.PositionModify(ticket, newsl, PositionGetDouble(POSITION_TP));
+                  }
+               }
+            }
+         }
+      } else if ( buscarPosicaoAbertasByTipo(POSITION_TYPE_SELL) == true &&  buscarPosicaoAbertasByTipo(POSITION_TYPE_BUY) == false) {
+         Print("Posição de Venda:");
          // caso venda
          // preço atual for menor do que o topo da onda atual menor muda o trailling
-         if( ativoInfo.Last() < precoTopoAtual2 ) {
-
-            deltaStop = NormalizeDouble((precoTopoAnterior - precoFundoAtual) * deltaStopPercentual, _Digits) ;
-
-            double valorStopLoss = NormalizeDouble(precoTopoAtual2 + deltaStop, _Digits);
-            stopLoss = NormalizeDouble(MathRound(valorStopLoss / ativoInfo.TickSize()) * ativoInfo.TickSize(), _Digits);
-
-            trade.PositionModify(_Symbol, NormalizeDouble( 20, _Digits), 0);
-
+         if( ativoInfo.Last() < precoTopoAnterior2 ) {
+            for(int i = 0; i < PositionsTotal(); i++) {
+               ticket = PositionGetTicket(i);
+               if(ticket > 0) {
+                  newsl = NormalizeDouble(precoTopoAnterior2 + stopLossPontos * ativoInfo.Point(), ativoInfo.Digits());
+                  if(newsl < PositionGetDouble(POSITION_SL)) {
+                     // Print("modificando SL - SELL");
+                     trade.PositionModify(ticket, newsl, PositionGetDouble(POSITION_TP));
+                  }
+               }
+            }
          }
-
       }
 
-      //Print("Last:", ativoInfo.Last(), " - TS:", traillingStop);
 
+//Print("Last:", ativoInfo.Last(), " - TS:", traillingStop);
    }// fim trailling
-
-
 }
+
 
 
 //+------------------------------------------------------------------+
@@ -508,9 +525,9 @@ double somarVolume(datetime dataInicial, datetime dataFinal) {
 //+------------------------------------------------------------------+
 void abrirOrdem(ENUM_ORDER_TYPE tipoOrdem, double preco, double volume, double sl, double tp, string coment = "") {
 
-   //+-------------------------------------------------------+
+//+-------------------------------------------------------+
    bool result  ; // variável não inicializada no slide
-   //+-------------------------------------------------------+
+//+-------------------------------------------------------+
 
    preco = NormalizeDouble(preco, _Digits);
    sl = NormalizeDouble(sl, _Digits);
@@ -565,7 +582,7 @@ void fecharTodasPosicoesRobo() {
 //+------------------------------------------------------------------+
 void obterHistoricoNegociacaoRobo() {
 
-   //Funções de Negociação
+//Funções de Negociação
    HistorySelect(0, TimeCurrent());
    uint total = HistoryDealsTotal();
    ulong ticket = 0;
@@ -652,7 +669,7 @@ bool buscarPosicaoAbertasByTipo(ENUM_POSITION_TYPE tipoPosicaoBusca) {
    isPosicaoAberta = false;
 
    int totalPosicoes = PositionsTotal();
-   //Print("POSICOES ABERTAS: " + totalPosicoes + " - Tipo posicao busca: " + EnumToString(tipoPosicaoBusca) );
+//Print("POSICOES ABERTAS: " + totalPosicoes + " - Tipo posicao busca: " + EnumToString(tipoPosicaoBusca) );
    double lucroPosicao;
 
    for(int i = 0; i < totalPosicoes; i++) {
@@ -681,9 +698,6 @@ bool buscarPosicaoAbertasByTipo(ENUM_POSITION_TYPE tipoPosicaoBusca) {
                //Print("RETORNO POSICAO ABERTA: " + EnumToString(tipoPosicaoAberta) + " - ROBO: " + magic);
                //Print("TEM VENDA");
                return true;
-            } else {
-               tipoPosicaoBusca = NULL;
-               isPosicaoAberta = false;
             }
          } // fim magic
 
@@ -697,9 +711,5 @@ bool buscarPosicaoAbertasByTipo(ENUM_POSITION_TYPE tipoPosicaoBusca) {
    return false;
 
 }
-//+------------------------------------------------------------------+
-//+------------------------------------------------------------------+
-
-//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 
