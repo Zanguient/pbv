@@ -712,4 +712,3 @@ bool buscarPosicaoAbertasByTipo(ENUM_POSITION_TYPE tipoPosicaoBusca) {
 
 }
 //+------------------------------------------------------------------+
-
