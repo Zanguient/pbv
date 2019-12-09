@@ -13,17 +13,17 @@
    | Otimizações realizadas para:                                    |
    |                                                                 |
    | -> Dolar Futuro:                                                |
-   |     Profundidade da Onda Maior....:                             |
-   |     Profundidade da Onda Menor....:                             |
-   |     Delta Stop....................:                             |
+   |     Profundidade da Onda Maior....: 28                          |
+   |     Profundidade da Onda Menor....:  5                          |
+   |     Delta Stop....................: 0.25                        |
    |     Pontos para Stop Loss.........: 100                         |
    |     Timeframe  ...................: 5M                          |
    |     Perído de teste...............: 01/06/2019 ~ 07/12/2019     |
    |                                                                 |
    | -> Índice Bovespa Futuro:                                       |
-   |     Profundidade da Onda Maior....:                             |
-   |     Profundidade da Onda Menor....:                             |
-   |     Delta Stop....................:                             |
+   |     Profundidade da Onda Maior....: 13                          |
+   |     Profundidade da Onda Menor....:  5                          |
+   |     Delta Stop....................: 0.20                        |
    |     Pontos para Stop Loss.........: 100                         |
    |     Timeframe  ...................: 5M                          |
    |     Perído de teste...............: 01/06/2019 ~ 07/12/2019     |
@@ -35,21 +35,13 @@
    |     Pontos para Stop Loss.........: 100                         |
    |     Timeframe  ...................: 5M                          |
    |     Perído de teste...............: 01/06/2019 ~ 07/12/2019     |
-   |                                                                 |                                                                 |
-   | -> Ação -> MGLU3:                                               |
-   |     Profundidade da Onda Maior....:                             |
-   |     Profundidade da Onda Menor....:                             |
-   |     Delta Stop....................:                             |
-   |     Pontos para Stop Loss.........: 100                         |
-   |     Timeframe  ...................: 5M                          |   
-   |     Perído de teste...............: 01/06/2019 ~ 07/12/2019     |
    |                                                                 |
    | -> Ação -> VALE3:                                               |
-   |     Profundidade da Onda Maior....:                             |
-   |     Profundidade da Onda Menor....:                             |
-   |     Delta Stop....................:                             |
+   |     Profundidade da Onda Maior....: 13                          |
+   |     Profundidade da Onda Menor....: 07                          |
+   |     Delta Stop....................: 0.100                       |
    |     Pontos para Stop Loss.........: 100                         |
-   |     Timeframe  ...................: 5M                          |
+   |     Timeframe  ...................: 1M                          |
    |     Perído de teste...............: 01/06/2019 ~ 07/12/2019     |
    |                                                                 |
    +-----------------------------------------------------------------+
